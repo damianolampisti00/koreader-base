@@ -70,6 +70,10 @@ if(ANDROID AND CHOST MATCHES "^armv7a-.*")
     # (https://android.googlesource.com/platform/bionic/+/master/docs/32-bit-abi.md)
     string(APPEND XCFLAGS " -D_FILE_OFFSET_BITS=32")
 endif()
+if(BB10)
+    # QNX has no BSD `u_int*_t` types (used by `fitz/icc34.h`).
+    string(APPEND XCFLAGS " -DHAVE_STDINT_H")
+endif()
 
 set(MAKE_CMD
     make -C ${SOURCE_DIR}

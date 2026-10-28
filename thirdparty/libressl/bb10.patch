@@ -1,0 +1,90 @@
+diff --color -ruN a/crypto/CMakeLists.txt b/crypto/CMakeLists.txt
+--- a/crypto/CMakeLists.txt	2026-10-28 19:32:00.950663548 +0100
++++ b/crypto/CMakeLists.txt	2026-10-28 19:32:14.064194418 +0100
+@@ -735,6 +735,8 @@
+ 			set(COMPAT_SRC ${COMPAT_SRC} compat/getentropy_osx.c)
+ 		elseif(CMAKE_SYSTEM_NAME MATCHES "SunOS")
+ 			set(COMPAT_SRC ${COMPAT_SRC} compat/getentropy_solaris.c)
++		elseif(CMAKE_SYSTEM_NAME MATCHES "QNX")
++			set(COMPAT_SRC ${COMPAT_SRC} compat/getentropy_qnx.c)
+ 		endif()
+ 	endif()
+ endif()
+diff --color -ruN a/crypto/compat/arc4random.h b/crypto/compat/arc4random.h
+--- a/crypto/compat/arc4random.h	2026-10-28 19:32:00.946663537 +0100
++++ b/crypto/compat/arc4random.h	2026-10-28 19:32:14.063673087 +0100
+@@ -21,6 +21,9 @@
+ #elif defined(__NetBSD__)
+ #include "arc4random_netbsd.h"
+ 
++#elif defined(__QNX__)
++#include "arc4random_linux.h"
++
+ #elif defined(__APPLE__)
+ #include "arc4random_osx.h"
+ 
+diff --color -ruN a/crypto/compat/getentropy_qnx.c b/crypto/compat/getentropy_qnx.c
+--- a/crypto/compat/getentropy_qnx.c	1970-01-01 01:00:00.000000000 +0100
++++ b/crypto/compat/getentropy_qnx.c	2026-10-28 19:32:14.067697927 +0100
+@@ -0,0 +1,46 @@
++/*
++ * getentropy() for QNX (BlackBerry 10), which has no getentropy/getrandom:
++ * read the kernel's random device.
++ */
++#include <errno.h>
++#include <fcntl.h>
++#include <stddef.h>
++#include <unistd.h>
++
++int getentropy(void *buf, size_t len);
++
++int
++getentropy(void *buf, size_t len)
++{
++	unsigned char *p = buf;
++	size_t done = 0;
++	int fd;
++
++	if (len > 256) {
++		errno = EIO;
++		return (-1);
++	}
++	fd = open("/dev/urandom", O_RDONLY | O_CLOEXEC);
++	if (fd == -1)
++		fd = open("/dev/random", O_RDONLY | O_CLOEXEC);
++	if (fd == -1)
++		return (-1);
++	while (done < len) {
++		ssize_t n = read(fd, p + done, len - done);
++		if (n == -1) {
++			if (errno == EINTR)
++				continue;
++			close(fd);
++			errno = EIO;
++			return (-1);
++		}
++		if (n == 0) {
++			close(fd);
++			errno = EIO;
++			return (-1);
++		}
++		done += (size_t)n;
++	}
++	close(fd);
++	return (0);
++}
+diff --color -ruN a/tls/tls_client.c b/tls/tls_client.c
+--- a/tls/tls_client.c	2026-10-28 19:32:00.953663555 +0100
++++ b/tls/tls_client.c	2026-10-28 19:32:14.064782932 +0100
+@@ -113,7 +113,11 @@
+ 		if (getaddrinfo(h, p, &hints, &res0) != 0) {
+ 			/* last try, with name resolution and save the error */
+ 			hints.ai_family = AF_UNSPEC;
++#ifdef AI_ADDRCONFIG
+ 			hints.ai_flags = AI_ADDRCONFIG;
++#else
++			hints.ai_flags = 0;
++#endif
+ 			if ((s = getaddrinfo(h, p, &hints, &res0)) != 0) {
+ 				tls_set_errorx(ctx, TLS_ERROR_UNKNOWN,
+ 				    "%s", gai_strerror(s));

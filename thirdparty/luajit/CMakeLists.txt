@@ -4,6 +4,10 @@ set(BINARY_DIR ${SOURCE_DIR})
 list(APPEND PATCH_FILES koreader-luajit-makefile-tweaks.patch)
 # Enable table.pack & table.unpack w/o the rest of the -DLUAJIT_ENABLE_LUA52COMPAT baggage...
 list(APPEND PATCH_FILES koreader-luajit-enable-table_pack.patch)
+if(BB10)
+    # Build buildvm for a QNX (POSIX) target.
+    list(APPEND PATCH_FILES koreader-luajit-qnx-host-os.patch)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     # Debugging is a go!
@@ -65,6 +69,8 @@ else()
         list(APPEND BUILD_ARGS TARGET_SYS=Linux)
     elseif(WIN32)
         list(APPEND BUILD_ARGS TARGET_SYS=Windows)
+    elseif(BB10)
+        list(APPEND BUILD_ARGS TARGET_SYS=QNX)
     endif()
     list(APPEND BUILD_ARGS TARGET_STRIP=true)
 endif()

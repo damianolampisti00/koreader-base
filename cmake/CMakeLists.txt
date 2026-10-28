@@ -188,6 +188,20 @@ if(NOT ((ANDROID AND MONOLIBTIC) OR APPLE OR EMULATE_READER OR USE_SDL))
         VERBATIM
     )
     add_custom_target(stl-install ALL DEPENDS ${OUTPUT_DIR}/libs/${STL_NAME})
+    if(BB10)
+        # Our toolchain's libgcc_s is needed too (the system one is older).
+        find_compiler_lib_path(GCC_S_PATH libgcc_s.so.1 REQUIRED)
+        set(CMD_LIST)
+        append_binary_install_command(CMD_LIST ${GCC_S_PATH} DESTINATION ${OUTPUT_DIR}/libs)
+        add_custom_command(
+            OUTPUT ${OUTPUT_DIR}/libs/libgcc_s.so.1
+            COMMAND ${CMD_LIST}
+            COMMENT "Installing 'libgcc_s.so.1'"
+            DEPENDS ${GCC_S_PATH}
+            VERBATIM
+        )
+        add_custom_target(gcc_s-install ALL DEPENDS ${OUTPUT_DIR}/libs/libgcc_s.so.1)
+    endif()
 endif()
 
 # THIRDPARTY. {{{
@@ -242,7 +256,7 @@ declare_project(thirdparty/cpu_features EXCLUDE_FROM_ALL)
 declare_project(thirdparty/curl DEPENDS libressl zlib EXCLUDE_FROM_ALL)
 
 # czmq
-if(NOT WIN32)
+if(NOT (WIN32 OR BB10))
     set(EXCLUDE_FROM_ALL)
 else()
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -354,7 +368,7 @@ declare_project(thirdparty/libunibreak EXCLUDE_FROM_ALL)
 declare_project(thirdparty/libwebp)
 
 # libzmq
-if(NOT WIN32)
+if(NOT (WIN32 OR BB10))
     set(EXCLUDE_FROM_ALL)
 else()
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -443,7 +457,12 @@ declare_project(thirdparty/popen-noshell EXCLUDE_FROM_ALL)
 declare_project(thirdparty/proxy-libintl EXCLUDE_FROM_ALL)
 
 # sdcv
-declare_project(thirdparty/sdcv DEPENDS glib zlib)
+if(BB10)
+    set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
+else()
+    set(EXCLUDE_FROM_ALL)
+endif()
+declare_project(thirdparty/sdcv DEPENDS glib zlib ${EXCLUDE_FROM_ALL})
 
 # sdl3
 if(USE_SDL STREQUAL "builtin")
@@ -484,7 +503,7 @@ declare_project(thirdparty/sdl3 ${EXCLUDE_FROM_ALL})
 declare_project(thirdparty/sqlite)
 
 # tar
-if(NOT (ANDROID OR APPLE OR EMULATE_READER OR WIN32))
+if(NOT (ANDROID OR APPLE OR BB10 OR EMULATE_READER OR WIN32))
     set(EXCLUDE_FROM_ALL)
 else()
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -655,7 +674,7 @@ endif()
 ffi_target(cervantes mxcfb_cervantes_h.lua mxcfb_cervantes_decl.c ${EXCLUDE_FROM_ALL})
 
 # czmq
-if(APPLE)
+if(APPLE OR BB10)
     # Generating FFI cdecls for czmq currently fails on macOS…
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
 else()

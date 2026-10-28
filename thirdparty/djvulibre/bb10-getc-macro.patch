@@ -1,0 +1,11 @@
+--- a/libdjvu/miniexp.cpp	2026-10-28 19:31:32.941589926 +0100
++++ b/libdjvu/miniexp.cpp	2026-10-28 19:31:32.942589929 +0100
+@@ -1326,7 +1326,7 @@
+ 
+ static int true_stdio_fgetc(miniexp_io_t *io) {
+   FILE *f = (io->data[0]) ? (FILE*)(io->data[0]) : stdin;
+-  return ::getc(f);
++  return (::getc)(f);
+ }
+ static int compat_getc() { 
+   return true_stdio_fgetc(&miniexp_io); 

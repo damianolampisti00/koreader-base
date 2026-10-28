@@ -76,7 +76,7 @@ endfunction()
 # KOREADER LIBRARIES. {{{
 
 # blitbuffer
-if(ANDROID OR CERVANTES OR KINDLE OR KOBO OR POCKETBOOK OR REMARKABLE OR SONY_PRSTUX OR USE_SDL)
+if(ANDROID OR BB10 OR CERVANTES OR KINDLE OR KOBO OR POCKETBOOK OR REMARKABLE OR SONY_PRSTUX OR USE_SDL)
     set(EXCLUDE_FROM_ALL)
 else()
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
@@ -114,7 +114,7 @@ set(DEPENDS luajit::luajit)
 if(KINDLE OR REMARKABLE)
     list(APPEND DEPENDS popen-noshell::popen-noshell)
 endif()
-if(ANDROID OR POCKETBOOK OR USE_SDL)
+if(ANDROID OR BB10 OR POCKETBOOK OR USE_SDL)
     set(EXCLUDE_FROM_ALL EXCLUDE_FROM_ALL)
 else()
     set(EXCLUDE_FROM_ALL)
@@ -138,10 +138,15 @@ function(setup_koreader_input)
 endfunction()
 
 # koreader-nnsvg
+set(SOURCES nnsvg.c)
+if(BB10)
+    # QNX's libc lacks `strndup`.
+    list(APPEND SOURCES toolchain/bb10/compat/strndup.c)
+endif()
 declare_koreader_target(
     koreader-nnsvg TYPE monolibtic
     DEPENDS luajit::luajit nanosvg::nanosvg
-    SOURCES nnsvg.c
+    SOURCES ${SOURCES}
     SUFFIX .so
     VISIBILITY hidden
 )

@@ -8,6 +8,10 @@ list(APPEND PATCH_FILES no_references_to_install_dir.patch)
 if(ANDROID)
     list(APPEND PATCH_FILES android.patch)
 endif()
+if(BB10)
+    # QNX's <stdio.h> defines `getc` as a macro, even in C++.
+    list(APPEND PATCH_FILES bb10-getc-macro.patch)
+endif()
 
 list(APPEND CMAKE_ARGS
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}

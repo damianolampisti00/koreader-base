@@ -247,6 +247,10 @@ else ifeq ($(TARGET), cervantes)
 		CHOST?=arm-linux-gnueabi
 	endif
 	USE_LJ_WPACLIENT=1
+else ifeq ($(TARGET), bb10)
+	# BlackBerry 10 (QNX 8.0), with BerryCore's GCC 9.3 toolchain.
+	BB10=1
+	CHOST?=arm-blackberry-qnx8eabi
 else ifndef TARGET
 	# if TARGET is not defined we will build an emulator on current machine
 	EMULATE_READER=1
@@ -579,6 +583,18 @@ else ifeq ($(TARGET), cervantes)
 		COMPAT_CFLAGS:=$(UBUNTU_COMPAT_CFLAGS)
 		COMPAT_CXXFLAGS:=$(UBUNTU_COMPAT_CFLAGS)
 	endif
+else ifeq ($(TARGET), bb10)
+	# Krait (Snapdragon S4 Plus), the BB10 ABI is softfp.
+	TARGET_CFLAGS:=$(ARMV7_A9_ARCH)
+	TARGET_CFLAGS+=-mfloat-abi=softfp
+	# NOTE: the toolchain's specs put `-isystem $QNX_INC` first, so QNX_INC must point
+	# to NDK headers stripped of the third-party libraries we build (zlib, png, freetype…).
+	# Add a few headers the NDK lacks (endian.h, byteswap.h, syslog.h).
+	BB10_TC_DIR:=$(abspath $(KOR_BASE)/toolchain/bb10)
+	COMPAT_CFLAGS:=-idirafter $(BB10_TC_DIR)/include
+	# The NDK's (Dinkum) <math.h> adds C++ overloads (e.g. `pow(float, int)`)
+	# that clash with libstdc++'s <cmath>: disable them.
+	COMPAT_CXXFLAGS:=$(COMPAT_CFLAGS) -D_NO_CPP_INLINES
 else ifeq ($(TARGET), arm-generic)
 	# Defaults to generic crap
 	TARGET_CFLAGS:=$(ARMV6_GENERIC_ARCH)
@@ -902,7 +918,7 @@ $(cmake_toolchain)
 # NOTE: use Linux for Android too (cf. https://github.com/taka-no-me/android-cmake and
 # https://android.googlesource.com/platform/ndk/+/master/build/cmake/android.toolchain.cmake)
 # In the meantime, I'll be sitting in the corner, crying hysterically.
-set(CMAKE_SYSTEM_NAME $(if $(DARWIN),Darwin,$(if $(WIN32),Windows,Linux)))
+set(CMAKE_SYSTEM_NAME $(if $(DARWIN),Darwin,$(if $(WIN32),Windows,$(if $(BB10),QNX,Linux))))
 
 # Magical value that inhibits all of CMake's own NDK handling code. (Or shit goes boom.)
 $(if $(ANDROID),set(CMAKE_SYSTEM_VERSION 1))
@@ -983,6 +999,7 @@ set(GLIBC_VERSION_MAX  $(GLIBC_VERSION_MAX))
 
 # Platform flags.
 set(ANDROID        $(ANDROID))
+set(BB10           $(BB10))
 set(CERVANTES      $(CERVANTES))
 set(KINDLE         $(KINDLE))
 set(KOBO           $(KOBO))
@@ -1044,7 +1061,7 @@ else
 MESON_CROSS_TOOLCHAIN = $(CMAKE_DIR)/meson_cross_toolchain.ini
 MESON_HOST_TOOLCHAIN = $(CMAKE_DIR)/meson_host_toolchain.ini
 
-MESON_CROSS_SYSTEM = $(if $(ANDROID),android,linux)
+MESON_CROSS_SYSTEM = $(if $(ANDROID),android,$(if $(BB10),qnx,linux))
 ifneq (,$(filter aarch64-%,$(TARGET_MACHINE)))
   MESON_CROSS_CPU_FAMILY = aarch64
 else ifneq (,$(filter arm-% armv7a-%,$(TARGET_MACHINE)))

@@ -2,6 +2,10 @@ list(APPEND PATCH_FILES cmake_tweaks.patch)
 if(ANDROID)
     list(APPEND PATCH_FILES android.patch)
 endif()
+if(BB10)
+    # arc4random/getentropy hooks for QNX, no AI_ADDRCONFIG.
+    list(APPEND PATCH_FILES bb10.patch)
+endif()
 
 list(APPEND CMAKE_ARGS
     -DCMAKE_TOOLCHAIN_FILE=${CMAKE_TOOLCHAIN_FILE}
