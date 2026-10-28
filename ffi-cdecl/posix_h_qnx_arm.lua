@@ -230,7 +230,7 @@ struct sockaddr_storage {
 struct ifaddrs {
   struct ifaddrs *ifa_next;
   char *ifa_name;
-  u_int ifa_flags;
+  unsigned ifa_flags;
   struct sockaddr *ifa_addr;
   struct sockaddr *ifa_netmask;
   struct sockaddr *ifa_dstaddr;

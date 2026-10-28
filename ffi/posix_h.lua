@@ -742,24 +742,12 @@ struct ifaddrs {
   void *ifa_data;
 };
 ]]
-elseif --[[ macos ]] platform == 0x80 then
+elseif --[[ macos|qnx_arm ]] bit.band(platform, 0x180) ~= 0 then
 ffi.cdef[[
 struct ifaddrs {
   struct ifaddrs *ifa_next;
   char *ifa_name;
   unsigned ifa_flags;
-  struct sockaddr *ifa_addr;
-  struct sockaddr *ifa_netmask;
-  struct sockaddr *ifa_dstaddr;
-  void *ifa_data;
-};
-]]
-elseif --[[ qnx_arm ]] platform == 0x100 then
-ffi.cdef[[
-struct ifaddrs {
-  struct ifaddrs *ifa_next;
-  char *ifa_name;
-  u_int ifa_flags;
   struct sockaddr *ifa_addr;
   struct sockaddr *ifa_netmask;
   struct sockaddr *ifa_dstaddr;

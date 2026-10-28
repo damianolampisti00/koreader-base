@@ -137,7 +137,7 @@ if android then
             return package.loadlib(path, "luaopen_" .. modulename:sub(18))
         end)
     end
-elseif ffi.os == "Linux" then
+elseif ffi.os == "Linux" or ffi.os == "POSIX" then -- POSIX: QNX (BlackBerry 10)
     lib_search_path = "libs/?"
     -- Unversioned: libz.so
     lib_basic_format = "lib%s.so"

@@ -407,7 +407,10 @@ function util.runInSubProcess(func, with_pipe, double_fork)
                 C.sched_setscheduler(0, C.SCHED_BATCH, param)
             end
             -- And nice it at lower priority, too (unlike the above call, this is POSIX).
-            C.setpriority(C.PRIO_PROCESS, 0, 5)
+            -- (Except that QNX doesn't provide it.)
+            if ffi.os ~= "POSIX" then
+                C.setpriority(C.PRIO_PROCESS, 0, 5)
+            end
 
             -- Just run the provided lua code object in this new process,
             -- and exit immediatly (so we do not release drivers and

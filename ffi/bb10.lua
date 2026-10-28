@@ -73,7 +73,8 @@ function bb10.init()
 
     local disp = ffi.new("screen_display_t[1]")
     if S.screen_get_window_property_pv(bb10.win, C.SCREEN_PROPERTY_DISPLAY, ffi.cast("void **", disp)) == 0 then
-        local dpi = ffi.new("int[1]")
+        -- NOTE: the DPI property is a (horizontal, vertical) pair.
+        local dpi = ffi.new("int[2]")
         if S.screen_get_display_property_iv(disp[0], C.SCREEN_PROPERTY_DPI, dpi) == 0 and dpi[0] > 0 then
             bb10.dpi = dpi[0]
         end

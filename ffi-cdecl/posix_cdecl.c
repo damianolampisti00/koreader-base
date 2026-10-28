@@ -129,6 +129,10 @@ cdecl_type_replace(_Uint8t, uint8_t);
 cdecl_type_replace(_Uint16t, uint16_t);
 cdecl_type_replace(_Uint32t, uint32_t);
 cdecl_type_replace(_Uint64t, uint64_t);
+cdecl_type_replace(u_char, unsigned char);
+cdecl_type_replace(u_short, unsigned short);
+cdecl_type_replace(u_int, unsigned);
+cdecl_type_replace(u_long, unsigned long);
 #endif
 
 cdecl_const(EAGAIN);
