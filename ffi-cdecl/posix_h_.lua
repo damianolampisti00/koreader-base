@@ -7,6 +7,9 @@ if os.getenv("IS_ANDROID") then
     platform_str = "android_" .. ffi.arch
 elseif ffi.os == "OSX" then
     platform_str = "macos"
+elseif ffi.os == "POSIX" then
+    -- LuaJIT reports QNX (BlackBerry 10) as a generic POSIX OS.
+    platform_str = "qnx_" .. ffi.arch
 else
     platform_str = ffi.os:lower() .. "_" .. ffi.arch
 end

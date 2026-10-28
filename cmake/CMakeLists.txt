@@ -787,6 +787,7 @@ set(VERSIONS
     android_arm android_arm64 android_x86 android_x64
     linux_arm linux_arm64 linux_x64
     macos
+    qnx_arm
 )
 add_custom_target(
     posix-ffi
@@ -810,6 +811,8 @@ if(ANDROID)
     set(POSIX_PLATFORM android_${LUAJIT_ARCH})
 elseif(APPLE)
     set(POSIX_PLATFORM macos)
+elseif(BB10)
+    set(POSIX_PLATFORM qnx_${LUAJIT_ARCH})
 else()
     set(POSIX_PLATFORM linux_${LUAJIT_ARCH})
 endif()

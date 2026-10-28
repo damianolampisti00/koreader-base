@@ -17,6 +17,9 @@
 # define __const const
 // `basename(…)` if macro for `__xpg_basename(…)`.
 # define __xpg_basename  basename
+#elif defined(__QNX__)
+// <sys/resource.h> needs `struct timeval`.
+# include <sys/time.h>
 #endif
 
 #include <libgen.h>
@@ -117,6 +120,15 @@ cdecl_type_replace(__syscall_slong_t, long);
 # if __WORDSIZE == 32
 cdecl_type_replace(__u_quad_t, unsigned long long);
 # endif
+#elif defined(__QNX__)
+cdecl_type_replace(_Int8t, int8_t);
+cdecl_type_replace(_Int16t, int16_t);
+cdecl_type_replace(_Int32t, int32_t);
+cdecl_type_replace(_Int64t, int64_t);
+cdecl_type_replace(_Uint8t, uint8_t);
+cdecl_type_replace(_Uint16t, uint16_t);
+cdecl_type_replace(_Uint32t, uint32_t);
+cdecl_type_replace(_Uint64t, uint64_t);
 #endif
 
 cdecl_const(EAGAIN);
@@ -173,6 +185,10 @@ cdecl_const(PATH_MAX);
 # if !defined(CLOCK_BOOTTIME)
 #  define CLOCK_BOOTTIME  7
 # endif
+#elif defined(__QNX__)
+# define CLOCK_BOOTTIME          -1 // not available
+# define CLOCK_MONOTONIC_COARSE  CLOCK_MONOTONIC
+# define CLOCK_REALTIME_COARSE   CLOCK_REALTIME
 #endif
 
 cdecl_const(CLOCK_BOOTTIME);
@@ -191,6 +207,8 @@ cdecl_out(type_clockid_t, typedef unsigned clockid_t;);
 #elif defined(__linux__)
 cdecl_type_replace(__clockid_t, clockid_t);
 cdecl_type(__clockid_t);
+#elif defined(__QNX__)
+cdecl_type(clockid_t);
 #endif
 
 cdecl_const(FIONREAD);
@@ -219,6 +237,10 @@ cdecl_type_replace(__useconds_t, useconds_t);
 cdecl_type(__suseconds_t);
 cdecl_type(__time_t);
 cdecl_type(__useconds_t);
+#elif defined(__QNX__)
+cdecl_type(suseconds_t);
+cdecl_type(time_t);
+cdecl_type(useconds_t);
 #endif
 
 cdecl_struct(timeval);
@@ -270,6 +292,15 @@ cdecl_type(__mode_t);
 cdecl_type(__off_t);
 cdecl_type(__pid_t);
 cdecl_type(__uid_t);
+#elif defined(__QNX__)
+cdecl_type(blkcnt_t);
+cdecl_type(blksize_t);
+cdecl_type(id_t);
+cdecl_type(mode_t);
+cdecl_type(_Offt);
+cdecl_type(off_t);
+cdecl_type(pid_t);
+cdecl_type(uid_t);
 #endif
 
 #if defined(__ANDROID__)
@@ -285,6 +316,9 @@ cdecl_type_replace(__fsblkcnt_t, fsblkcnt_t);
 cdecl_type_replace(__fsfilcnt_t, fsfilcnt_t);
 cdecl_type(__fsblkcnt_t);
 cdecl_type(__fsfilcnt_t);
+#elif defined(__QNX__)
+cdecl_type(fsblkcnt_t);
+cdecl_type(fsfilcnt_t);
 #endif
 
 cdecl_struct(statvfs);
@@ -306,7 +340,7 @@ cdecl_const(AF_UNIX);
 cdecl_const(NI_MAXHOST);
 cdecl_const(NI_NUMERICHOST);
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__QNX__)
 # define SOCK_CLOEXEC   0 // not available
 # define SOCK_NONBLOCK  0 // not available
 #endif
@@ -322,6 +356,8 @@ cdecl_type(caddr_t);
 #elif defined(__linux__)
 cdecl_type_replace(__caddr_t, caddr_t);
 cdecl_type(__caddr_t);
+#elif defined(__QNX__)
+cdecl_type(caddr_t);
 #endif
 
 cdecl_type(in_addr_t);
@@ -332,7 +368,7 @@ cdecl_type_replace(__kernel_sa_family_t, sa_family_t);
 cdecl_type(__kernel_sa_family_t);
 #elif defined(__APPLE__)
 cdecl_type(sa_family_t);
-#elif defined(__linux__)
+#elif defined(__linux__) || defined(__QNX__)
 cdecl_type(sa_family_t);
 #endif
 
@@ -342,6 +378,8 @@ cdecl_type(__darwin_socklen_t);
 #elif defined(__linux__)
 cdecl_type_replace(__socklen_t, socklen_t);
 cdecl_type(__socklen_t);
+#elif defined(__QNX__)
+cdecl_type(socklen_t);
 #endif
 
 cdecl_struct(in_addr);
@@ -412,6 +450,9 @@ cdecl_type(__darwin_pthread_t);
 # if defined(__have_pthread_attr_t)
 cdecl_union(pthread_attr_t);
 # endif
+cdecl_type(pthread_attr_t);
+cdecl_type(pthread_t);
+#elif defined(__QNX__)
 cdecl_type(pthread_attr_t);
 cdecl_type(pthread_t);
 #endif
@@ -498,7 +539,7 @@ cdecl_func(fread);
 cdecl_func(fwrite);
 cdecl_func(sprintf);
 
-#if !defined(__APPLE__)
+#if !defined(__APPLE__) && !defined(__QNX__)
 # if !defined(__ANDROID__)
 cdecl_type_replace(__off_t, off_t);
 # endif
@@ -609,15 +650,19 @@ cdecl_type_replace(__timezone_ptr_t, struct timezone *);
 cdecl_func(gettimeofday);
 cdecl_func(settimeofday);
 
+#if !defined(__QNX__)
+
 cdecl_const(PRIO_PROCESS);
 cdecl_const(PRIO_PGRP);
 cdecl_const(PRIO_USER);
 
-#if defined(__linux__) && !defined(__ANDROID__)
+# if defined(__linux__) && !defined(__ANDROID__)
 cdecl_type_replace(__priority_which_t, int);
-#endif
+# endif
 
 cdecl_func(setpriority);
+
+#endif
 
 cdecl_const(TCIFLUSH);
 
