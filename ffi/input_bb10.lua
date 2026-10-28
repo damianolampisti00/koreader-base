@@ -137,7 +137,29 @@ local button_keycodes = {
     [C.BUTTON_PLAYPAUSE] = C.KEYCODE_PLAY,
 }
 
+local side_keycodes = {
+    vup = C.KEYCODE_VOLUME_UP,
+    vdown = C.KEYCODE_VOLUME_DOWN,
+    playpause = C.KEYCODE_PLAY,
+}
+
+local function sideKeyEvents()
+    for _, key in ipairs(bb10.side_keys) do
+        local code = side_keycodes[key]
+        if code then
+            -- PPS only reports clicks.
+            genEmuEvent(C.EV_KEY, code, 1)
+            genEmuEvent(C.EV_KEY, code, 0)
+        end
+    end
+    bb10.side_keys = {}
+end
+
 local function buttonEvent(event)
+    if bb10.side_keys_fd then
+        -- Grabbed: they come through PPS (see sideKeyEvents).
+        return
+    end
     local code = button_keycodes[tonumber(bb10.bps.button_event_get_button(event))]
     if code then
         genEmuEvent(C.EV_KEY, code, bb10.bps.bps_event_get_code(event) == C.BUTTON_DOWN and 1 or 0)
@@ -174,11 +196,16 @@ function input.waitForEvent(sec, usec)
         handleEvent()
     end
 
+    sideKeyEvents()
+
     if #inputQueue > 0 then
         return true, inputQueue
     else
         return false, C.EINTR
     end
 end
+
+-- bps_get_event may call back into Lua (side keys handler): never from JIT-compiled code.
+jit.off(input.waitForEvent)
 
 return input

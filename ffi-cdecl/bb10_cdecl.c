@@ -88,12 +88,22 @@ cdecl_const(BPS_SUCCESS);
 cdecl_const(BPS_FAILURE);
 
 cdecl_type(bps_event_t);
+cdecl_struct(bps_event_payload_t);
+cdecl_type(bps_event_payload_t);
+cdecl_type(bps_event_completion_func);
 
 cdecl_func(bps_initialize);
 cdecl_func(bps_shutdown);
 cdecl_func(bps_get_event);
 cdecl_func(bps_event_get_domain);
 cdecl_func(bps_event_get_code);
+cdecl_func(bps_event_create);
+cdecl_func(bps_push_event);
+cdecl_func(bps_register_domain);
+
+cdecl_const(BPS_IO_INPUT);
+cdecl_func(bps_add_fd);
+cdecl_func(bps_remove_fd);
 
 cdecl_func(screen_request_events);
 cdecl_func(screen_stop_events);

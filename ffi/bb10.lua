@@ -10,6 +10,7 @@ local bit = require("bit")
 local ffi = require("ffi")
 local C = ffi.C
 
+require("ffi/posix_h")
 require("ffi/bb10_h")
 
 local bb10 = {
@@ -93,6 +94,58 @@ function bb10.init()
     bb10.screen_domain = B.screen_get_domain()
     bb10.navigator_domain = B.navigator_get_domain()
     bb10.button_domain = B.button_get_domain()
+    -- Used to wake up bps_get_event when side keys come through PPS (see grabSideKeys).
+    bb10.wakeup_domain = B.bps_register_domain()
+end
+
+-- Side keys "watched" like bb::multimedia::MediaKeyWatcher does: while registered, their presses
+-- come to us (as `msg::key\ndat::bn_<key>_short`) instead of changing the system volume.
+-- NOTE: that's system-wide, so only grab them while we're in the foreground.
+local MEDIA_KEYS_PPS = "/pps/services/multimedia/mediaplayer/control"
+local SIDE_KEYS = { "vup", "vdown", "playpause" }
+
+--- Side key presses received through PPS (key names: "vup", "vdown", "playpause").
+bb10.side_keys = {}
+
+local side_keys_buf = ffi.new("char[1024]")
+local side_keys_handler = ffi.cast("int (*)(int, int, void *)", function(fd)
+    local n = C.read(fd, side_keys_buf, ffi.sizeof(side_keys_buf) - 1)
+    if n <= 0 then
+        return C.BPS_SUCCESS
+    end
+    local got = false
+    for key in ffi.string(side_keys_buf, n):gmatch("msg::key\ndat::bn_(%w+)_short") do
+        table.insert(bb10.side_keys, key)
+        got = true
+    end
+    if got then
+        local ev = ffi.new("bps_event_t *[1]")
+        if bb10.bps.bps_event_create(ev, bb10.wakeup_domain, 0, nil, nil) == C.BPS_SUCCESS then
+            bb10.bps.bps_push_event(ev[0])
+        end
+    end
+    return C.BPS_SUCCESS
+end)
+
+function bb10.grabSideKeys(grab)
+    if grab and not bb10.side_keys_fd then
+        local fd = C.open(MEDIA_KEYS_PPS, C.O_RDWR)
+        if fd < 0 then
+            return false
+        end
+        for _, key in ipairs(SIDE_KEYS) do
+            local msg = string.format('msg::button\nid::%s\ndat:json:{"key":"bn_%s_short","action":"forward"}\n', key, key)
+            C.write(fd, msg, #msg)
+        end
+        bb10.bps.bps_add_fd(fd, C.BPS_IO_INPUT, side_keys_handler, nil)
+        bb10.side_keys_fd = fd
+    elseif not grab and bb10.side_keys_fd then
+        -- Closing the PPS connection drops our registrations.
+        bb10.bps.bps_remove_fd(bb10.side_keys_fd)
+        C.close(bb10.side_keys_fd)
+        bb10.side_keys_fd = nil
+    end
+    return bb10.side_keys_fd ~= nil
 end
 
 function bb10.setKeepAwake(keep_awake)
@@ -126,6 +179,7 @@ function bb10.shutdown()
     if not bb10.ctx then
         return
     end
+    bb10.grabSideKeys(false)
     bb10.bps.screen_stop_events(bb10.ctx)
     bb10.bps.navigator_stop_events(0)
     bb10.bps.button_stop_events(0)
