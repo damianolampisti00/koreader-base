@@ -130,6 +130,20 @@ local function navigatorEvent(event)
     end
 end
 
+-- Side keys, as their sys/keycodes.h KEYCODE_* (see the device's event map).
+local button_keycodes = {
+    [C.BUTTON_PLUS] = C.KEYCODE_VOLUME_UP,
+    [C.BUTTON_MINUS] = C.KEYCODE_VOLUME_DOWN,
+    [C.BUTTON_PLAYPAUSE] = C.KEYCODE_PLAY,
+}
+
+local function buttonEvent(event)
+    local code = button_keycodes[tonumber(bb10.bps.button_event_get_button(event))]
+    if code then
+        genEmuEvent(C.EV_KEY, code, bb10.bps.bps_event_get_code(event) == C.BUTTON_DOWN and 1 or 0)
+    end
+end
+
 local event = ffi.new("bps_event_t *[1]")
 
 local function handleEvent()
@@ -138,6 +152,8 @@ local function handleEvent()
         screenEvent(event[0])
     elseif domain == bb10.navigator_domain then
         navigatorEvent(event[0])
+    elseif domain == bb10.button_domain then
+        buttonEvent(event[0])
     end
 end
 

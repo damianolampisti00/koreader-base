@@ -97,6 +97,18 @@ int navigator_rotation_lock(bool);
 int navigator_invoke(const char *, char **);
 int navigator_close_window(void);
 int navigator_extend_terminate(void);
+static const unsigned BUTTON_UP = 0;
+static const unsigned BUTTON_DOWN = 1;
+typedef enum {
+  BUTTON_POWER = 0,
+  BUTTON_PLAYPAUSE = 1,
+  BUTTON_PLUS = 2,
+  BUTTON_MINUS = 3,
+} button_physical_t;
+int button_request_events(int);
+int button_stop_events(int);
+int button_get_domain();
+int button_event_get_button(bps_event_t *);
 static const unsigned BATTERY_INFO = 1;
 static const unsigned BATTERY_CHARGING_NOT_CHARGING = 0;
 static const unsigned BATTERY_CHARGING_TRICKLE_CHARGING = 1;

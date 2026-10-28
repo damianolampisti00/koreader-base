@@ -86,10 +86,13 @@ function bb10.init()
     end
     B.screen_request_events(bb10.ctx)
     B.navigator_request_events(0)
+    -- The side keys (volume +/-, play/pause) only come through the button service.
+    B.button_request_events(0)
     -- The Q10's display is square: never let the navigator rotate us.
     B.navigator_rotation_lock(true)
     bb10.screen_domain = B.screen_get_domain()
     bb10.navigator_domain = B.navigator_get_domain()
+    bb10.button_domain = B.button_get_domain()
 end
 
 function bb10.setKeepAwake(keep_awake)
@@ -125,6 +128,7 @@ function bb10.shutdown()
     end
     bb10.bps.screen_stop_events(bb10.ctx)
     bb10.bps.navigator_stop_events(0)
+    bb10.bps.button_stop_events(0)
     bb10.bps.bps_shutdown()
     bb10.screen.screen_destroy_window(bb10.win)
     bb10.screen.screen_destroy_context(bb10.ctx)

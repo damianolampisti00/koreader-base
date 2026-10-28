@@ -21,15 +21,11 @@ end
 function framebuffer:_updateWindow()
     local bb = self.window_bb
     local ext_bb = self.full_bb or self.bb
-    -- Clone the shadow buffer's rotation & inverse settings, so that the blit below is a 1:1 copy.
+    -- Clone the shadow buffer's rotation & inverse settings, so that the blit below is a 1:1 copy:
+    -- in night mode, the shadow buffer's content is already inverted (like on SDL).
     bb:setInverse(ext_bb:getInverse())
     bb:setRotation(ext_bb:getRotation())
-    if bb:getInverse() == 1 and BB:getUseCBB() then
-        -- The CBB ignores the invert flag: apply it now.
-        bb:invertblitFrom(ext_bb)
-    else
-        bb:blitFrom(ext_bb)
-    end
+    bb:blitFrom(ext_bb)
     bb10.post()
 end
 

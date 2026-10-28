@@ -2,6 +2,7 @@
 
 #include <bps/battery.h>
 #include <bps/bps.h>
+#include <bps/button.h>
 #include <bps/event.h>
 #include <bps/navigator.h>
 #include <bps/screen.h>
@@ -120,6 +121,16 @@ cdecl_func(navigator_rotation_lock);
 cdecl_func(navigator_invoke);
 cdecl_func(navigator_close_window);
 cdecl_func(navigator_extend_terminate);
+
+cdecl_const(BUTTON_UP);
+cdecl_const(BUTTON_DOWN);
+
+cdecl_type(button_physical_t);
+
+cdecl_func(button_request_events);
+cdecl_func(button_stop_events);
+cdecl_func(button_get_domain);
+cdecl_func(button_event_get_button);
 
 cdecl_const(BATTERY_INFO);
 cdecl_const(BATTERY_CHARGING_NOT_CHARGING);
