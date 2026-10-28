@@ -1,0 +1,18 @@
+diff -ruN a/include/mupdf/fitz/system.h b/include/mupdf/fitz/system.h
+--- a/include/mupdf/fitz/system.h	2026-10-29 00:49:58.577540484 +0100
++++ b/include/mupdf/fitz/system.h	2026-10-29 00:49:58.587221823 +0100
+@@ -145,7 +145,13 @@
+ 	variants. This makes a large speed difference on MacOSX (and
+ 	probably other platforms too.
+ */
+-#if HAVE_SIGSETJMP
++#if defined(__QNX__)
++/* QNX's sigsetjmp & setjmp are macros evaluating their argument twice,
++   which breaks fz_try (fz_push_try would be called twice). */
++#define fz_setjmp(BUF) _setjmp(BUF)
++#define fz_longjmp(BUF,VAL) _longjmp(BUF,VAL)
++typedef jmp_buf fz_jmp_buf;
++#elif HAVE_SIGSETJMP
+ #define fz_setjmp(BUF) sigsetjmp(BUF, 0)
+ #define fz_longjmp(BUF,VAL) siglongjmp(BUF, VAL)
+ typedef sigjmp_buf fz_jmp_buf;

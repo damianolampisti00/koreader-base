@@ -22,6 +22,10 @@ list(APPEND PATCH_FILES
     # Backport addition of `passthrough` member to `fz_device` (from b20077eb2).
     passthrough_device.patch
 )
+if(BB10)
+    # QNX's sigsetjmp/setjmp evaluate their argument twice: breaks fz_try.
+    list(APPEND PATCH_FILES bb10-setjmp.patch)
+endif()
 
 # Remove unnecessary vendored thirdparty libraries.
 list(APPEND PATCH_CMD COMMAND rm -rf
