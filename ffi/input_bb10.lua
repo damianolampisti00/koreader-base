@@ -26,6 +26,7 @@ local input = {
     MSC_SWIPE_DOWN = 3,
     MSC_LOW_MEMORY = 4,
     MSC_DEVICE_LOCK = 5,
+    MSC_WINDOW_COVER = 6, -- the active frame's size is in bb10.cover_width/cover_height
 }
 
 local inputQueue = {}
@@ -122,6 +123,13 @@ local function navigatorEvent(event)
         genEmuEvent(C.EV_MSC, input.MSC_SWIPE_DOWN, 0)
     elseif code == C.NAVIGATOR_LOW_MEMORY then
         genEmuEvent(C.EV_MSC, input.MSC_LOW_MEMORY, 0)
+    elseif code == C.NAVIGATOR_WINDOW_COVER then
+        local w = bb10.bps.navigator_event_get_window_cover_width(event)
+        local h = bb10.bps.navigator_event_get_window_cover_height(event)
+        if w > 0 and h > 0 then
+            bb10.cover_width, bb10.cover_height = w, h
+        end
+        genEmuEvent(C.EV_MSC, input.MSC_WINDOW_COVER, 0)
     elseif code == C.NAVIGATOR_DEVICE_LOCK_STATE then
         genEmuEvent(C.EV_MSC, input.MSC_DEVICE_LOCK, 0)
     elseif code == C.NAVIGATOR_ORIENTATION_CHECK then

@@ -171,6 +171,24 @@ function bb10.getBatteryInfo()
     return capacity >= 0 and capacity or nil, charging ~= C.BATTERY_CHARGING_NOT_CHARGING and charging ~= C.BATTERY_CHARGING_DONE_CHARGING, plugged
 end
 
+--- Active frame ("window cover") size, from the navigator's NAVIGATOR_WINDOW_COVER event.
+bb10.cover_width, bb10.cover_height = 310, 211 -- Q10/Q5 default
+
+--- Show the image `file` (absolute path) as our active frame, instead of a live thumbnail of the window.
+function bb10.setCover(file)
+    local B = bb10.bps
+    local attr = ffi.new("navigator_window_cover_attribute_t *[1]")
+    if B.navigator_window_cover_attribute_create(attr) ~= C.BPS_SUCCESS then
+        return false
+    end
+    local ok = B.navigator_window_cover_attribute_set_file(attr[0], file) == C.BPS_SUCCESS
+        and B.navigator_window_cover_attribute_set_transition(attr[0], C.NAVIGATOR_WINDOW_COVER_TRANSITION_FADE) == C.BPS_SUCCESS
+        and B.navigator_window_cover_update(attr[0]) == C.BPS_SUCCESS
+    local err = not ok and ffi.string(C.strerror(ffi.errno())) or nil
+    B.navigator_window_cover_attribute_destroy(attr[0])
+    return ok, err
+end
+
 function bb10.openLink(uri)
     return bb10.bps.navigator_invoke(uri, nil) == C.BPS_SUCCESS
 end

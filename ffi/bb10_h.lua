@@ -96,11 +96,21 @@ static const unsigned NAVIGATOR_ORIENTATION_CHECK = 7;
 static const unsigned NAVIGATOR_ORIENTATION = 8;
 static const unsigned NAVIGATOR_LOW_MEMORY = 6;
 static const unsigned NAVIGATOR_DEVICE_LOCK_STATE = 26;
+static const unsigned NAVIGATOR_WINDOW_COVER = 27;
+static const unsigned NAVIGATOR_WINDOW_COVER_ENTER = 28;
+static const unsigned NAVIGATOR_WINDOW_COVER_EXIT = 29;
 typedef enum {
   NAVIGATOR_WINDOW_FULLSCREEN = 0,
   NAVIGATOR_WINDOW_THUMBNAIL = 1,
   NAVIGATOR_WINDOW_INVISIBLE = 2,
 } navigator_window_state_t;
+typedef enum {
+  NAVIGATOR_WINDOW_COVER_TRANSITION_DEFAULT = 0,
+  NAVIGATOR_WINDOW_COVER_TRANSITION_NONE = 1,
+  NAVIGATOR_WINDOW_COVER_TRANSITION_SLIDE = 2,
+  NAVIGATOR_WINDOW_COVER_TRANSITION_FADE = 3,
+} navigator_window_cover_transition_t;
+typedef struct navigator_window_cover_attribute_t navigator_window_cover_attribute_t;
 int navigator_request_events(int);
 int navigator_stop_events(int);
 int navigator_get_domain();
@@ -110,6 +120,15 @@ int navigator_rotation_lock(bool);
 int navigator_invoke(const char *, char **);
 int navigator_close_window(void);
 int navigator_extend_terminate(void);
+int navigator_event_get_window_cover_width(bps_event_t *);
+int navigator_event_get_window_cover_height(bps_event_t *);
+int navigator_window_cover_attribute_create(navigator_window_cover_attribute_t **);
+int navigator_window_cover_attribute_destroy(navigator_window_cover_attribute_t *);
+int navigator_window_cover_attribute_set_file(navigator_window_cover_attribute_t *, const char *);
+int navigator_window_cover_attribute_set_transition(navigator_window_cover_attribute_t *, int);
+int navigator_window_cover_attribute_set_allow_badges(navigator_window_cover_attribute_t *, bool);
+int navigator_window_cover_update(navigator_window_cover_attribute_t *);
+int navigator_window_cover_reset(void);
 static const unsigned BUTTON_UP = 0;
 static const unsigned BUTTON_DOWN = 1;
 typedef enum {

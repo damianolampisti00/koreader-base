@@ -119,8 +119,13 @@ cdecl_const(NAVIGATOR_ORIENTATION_CHECK);
 cdecl_const(NAVIGATOR_ORIENTATION);
 cdecl_const(NAVIGATOR_LOW_MEMORY);
 cdecl_const(NAVIGATOR_DEVICE_LOCK_STATE);
+cdecl_const(NAVIGATOR_WINDOW_COVER);
+cdecl_const(NAVIGATOR_WINDOW_COVER_ENTER);
+cdecl_const(NAVIGATOR_WINDOW_COVER_EXIT);
 
 cdecl_type(navigator_window_state_t);
+cdecl_type(navigator_window_cover_transition_t);
+cdecl_type(navigator_window_cover_attribute_t);
 
 cdecl_func(navigator_request_events);
 cdecl_func(navigator_stop_events);
@@ -131,6 +136,15 @@ cdecl_func(navigator_rotation_lock);
 cdecl_func(navigator_invoke);
 cdecl_func(navigator_close_window);
 cdecl_func(navigator_extend_terminate);
+cdecl_func(navigator_event_get_window_cover_width);
+cdecl_func(navigator_event_get_window_cover_height);
+cdecl_func(navigator_window_cover_attribute_create);
+cdecl_func(navigator_window_cover_attribute_destroy);
+cdecl_func(navigator_window_cover_attribute_set_file);
+cdecl_func(navigator_window_cover_attribute_set_transition);
+cdecl_func(navigator_window_cover_attribute_set_allow_badges);
+cdecl_func(navigator_window_cover_update);
+cdecl_func(navigator_window_cover_reset);
 
 cdecl_const(BUTTON_UP);
 cdecl_const(BUTTON_DOWN);
