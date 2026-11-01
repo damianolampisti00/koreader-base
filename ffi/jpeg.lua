@@ -26,16 +26,17 @@ end
 
 local Jpeg = {}
 
-function Jpeg.openDocument(filename, color)
+-- NOTE: bgr: decode color images in BGR order (for devices with a BGR framebuffer, like Mupdf.bgr).
+function Jpeg.openDocument(filename, color, bgr)
     local fh = io.open(filename, "rb")
     assert(fh, "couldn't open JPG file")
     local data = fh:read("*a")
     fh:close()
 
-    return Jpeg.openDocumentFromMem(data, color)
+    return Jpeg.openDocumentFromMem(data, color, nil, bgr)
 end
 
-function Jpeg.openDocumentFromMem(data, color, size)
+function Jpeg.openDocumentFromMem(data, color, size, bgr)
     local handle = tj3Init(turbojpeg.TJINIT_DECOMPRESS)
     assert(handle, "no TurboJPEG API decompressor handle")
 
@@ -57,7 +58,7 @@ function Jpeg.openDocumentFromMem(data, color, size)
     if color then
         image_bb = BB.new(width, height, BB.TYPE_BBRGB24)
         components = 3
-        format = turbojpeg.TJPF_RGB
+        format = bgr and turbojpeg.TJPF_BGR or turbojpeg.TJPF_RGB
     else
         image_bb = BB.new(width, height, BB.TYPE_BB8)
         components = 1

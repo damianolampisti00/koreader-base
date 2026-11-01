@@ -172,7 +172,11 @@ function GifDocument:openPage(number)
         local palette={}
         for c=0, cmap.ColorCount-1 do
             local color = cmap.Colors[c]
-            palette[c] = BB.ColorRGB32(color.Red, color.Green, color.Blue, 0xFF)
+            if Pic.bgr then
+                palette[c] = BB.ColorRGB32(color.Blue, color.Green, color.Red, 0xFF)
+            else
+                palette[c] = BB.ColorRGB32(color.Red, color.Green, color.Blue, 0xFF)
+            end
         end
 
         -- Draw current frame on our bb
@@ -337,6 +341,13 @@ function Pic.openPNGDocument(filename)
         error("unsupported number of color components")
     end
 
+    if Pic.bgr and re.ncomp >= 3 then
+        local p = ffi.cast("uint8_t *", re.data)
+        for i = 0, re.width * re.height * re.ncomp - 1, re.ncomp do
+            p[i], p[i + 2] = p[i + 2], p[i]
+        end
+    end
+
     local doc = PicDocument:new{width=re.width, height=re.height}
     doc.image_bb = BB.new(re.width, re.height, bbtype, re.data)
     doc.components = re.ncomp
@@ -351,7 +362,7 @@ JPG handling
 --]]
 function Pic.openJPGDocument(filename)
     local Jpeg = require("ffi/jpeg")
-    local image, w, h, components = Jpeg.openDocument(filename, Pic.color)
+    local image, w, h, components = Jpeg.openDocument(filename, Pic.color, Pic.bgr)
 
     local doc = PicDocument:new{width=w, height=h}
     doc.image_bb = image
@@ -362,7 +373,7 @@ end
 
 function Pic.openJPGDocumentFromData(data, size)
     local Jpeg = require("ffi/jpeg")
-    local image, w, h, components = Jpeg.openDocumentFromMem(data, Pic.color, size)
+    local image, w, h, components = Jpeg.openDocumentFromMem(data, Pic.color, size, Pic.bgr)
 
     local doc = PicDocument:new{width=w, height=h}
     doc.image_bb = image
