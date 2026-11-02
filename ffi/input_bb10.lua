@@ -27,6 +27,8 @@ local input = {
     MSC_LOW_MEMORY = 4,
     MSC_DEVICE_LOCK = 5,
     MSC_WINDOW_COVER = 6, -- the active frame's size is in bb10.cover_width/cover_height
+    MSC_WINDOW_ACTIVE = 7, -- value: 1 active (e.g., screen on), 0 inactive
+    MSC_MEDIA_PLAYPAUSE = 8, -- the middle side key, while bb10.media_playpause
 }
 
 local inputQueue = {}
@@ -115,11 +117,7 @@ end
 
 -- Whether we're in the foreground (fullscreen & active): the button service is system-wide,
 -- so the side keys reach us even when minimized.
-local window_fullscreen, window_active = true, true
-
-local function inForeground()
-    return window_fullscreen and window_active
-end
+local inForeground = bb10.inForeground
 
 local function navigatorEvent(event)
     local code = bb10.bps.bps_event_get_code(event)
@@ -127,12 +125,14 @@ local function navigatorEvent(event)
         genEmuEvent(C.EV_MSC, input.MSC_EXIT, 0)
     elseif code == C.NAVIGATOR_WINDOW_STATE then
         local state = bb10.bps.navigator_event_get_window_state(event)
-        window_fullscreen = state == C.NAVIGATOR_WINDOW_FULLSCREEN
+        bb10.window_fullscreen = state == C.NAVIGATOR_WINDOW_FULLSCREEN
         genEmuEvent(C.EV_MSC, input.MSC_WINDOW_STATE, state)
     elseif code == C.NAVIGATOR_WINDOW_ACTIVE then
-        window_active = true
+        bb10.window_active = true
+        genEmuEvent(C.EV_MSC, input.MSC_WINDOW_ACTIVE, 1)
     elseif code == C.NAVIGATOR_WINDOW_INACTIVE then
-        window_active = false
+        bb10.window_active = false
+        genEmuEvent(C.EV_MSC, input.MSC_WINDOW_ACTIVE, 0)
     elseif code == C.NAVIGATOR_SWIPE_DOWN then
         genEmuEvent(C.EV_MSC, input.MSC_SWIPE_DOWN, 0)
     elseif code == C.NAVIGATOR_LOW_MEMORY then
@@ -166,13 +166,11 @@ local side_keycodes = {
 }
 
 local function sideKeyEvents()
-    if not inForeground() then
-        bb10.side_keys = {}
-        return
-    end
     for _, key in ipairs(bb10.side_keys) do
         local code = side_keycodes[key]
-        if code then
+        if key == "playpause" and bb10.media_playpause then
+            genEmuEvent(C.EV_MSC, input.MSC_MEDIA_PLAYPAUSE, 0)
+        elseif code and inForeground() then
             -- PPS only reports clicks.
             genEmuEvent(C.EV_KEY, code, 1)
             genEmuEvent(C.EV_KEY, code, 0)
@@ -187,7 +185,11 @@ local function buttonEvent(event)
         return
     end
     local code = button_keycodes[tonumber(bb10.bps.button_event_get_button(event))]
-    if code then
+    if code == C.KEYCODE_PLAY and bb10.media_playpause then
+        if bb10.bps.bps_event_get_code(event) == C.BUTTON_DOWN then
+            genEmuEvent(C.EV_MSC, input.MSC_MEDIA_PLAYPAUSE, 0)
+        end
+    elseif code then
         genEmuEvent(C.EV_KEY, code, bb10.bps.bps_event_get_code(event) == C.BUTTON_DOWN and 1 or 0)
     end
 end

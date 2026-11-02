@@ -100,9 +100,21 @@ end
 
 -- Side keys "watched" like bb::multimedia::MediaKeyWatcher does: while registered, their presses
 -- come to us (as `msg::key\ndat::bn_<key>_short`) instead of changing the system volume.
--- NOTE: that's system-wide, so only grab them while we're in the foreground.
+-- NOTE: that's system-wide, so only grab them while we're in the foreground (all of them),
+-- or while the middle key is used as a media play/pause key (see setMediaPlayPause).
 local MEDIA_KEYS_PPS = "/pps/services/multimedia/mediaplayer/control"
 local SIDE_KEYS = { "vup", "vdown", "playpause" }
+
+--- Whether our window is fullscreen & active (the screen is on): set by ffi/input_bb10.
+bb10.window_fullscreen, bb10.window_active = true, true
+
+function bb10.inForeground()
+    return bb10.window_fullscreen and bb10.window_active
+end
+
+--- While true, the middle side key is a media play/pause key, even in the background
+-- (e.g., read aloud): ffi/input_bb10 turns it into an EV_MSC MSC_MEDIA_PLAYPAUSE event.
+bb10.media_playpause = false
 
 --- Side key presses received through PPS (key names: "vup", "vdown", "playpause").
 bb10.side_keys = {}
@@ -127,25 +139,51 @@ local side_keys_handler = ffi.cast("int (*)(int, int, void *)", function(fd)
     return C.BPS_SUCCESS
 end)
 
-function bb10.grabSideKeys(grab)
-    if grab and not bb10.side_keys_fd then
-        local fd = C.open(MEDIA_KEYS_PPS, C.O_RDWR)
-        if fd < 0 then
-            return false
-        end
-        for _, key in ipairs(SIDE_KEYS) do
-            local msg = string.format('msg::button\nid::%s\ndat:json:{"key":"bn_%s_short","action":"forward"}\n', key, key)
-            C.write(fd, msg, #msg)
-        end
-        bb10.bps.bps_add_fd(fd, C.BPS_IO_INPUT, side_keys_handler, nil)
-        bb10.side_keys_fd = fd
-    elseif not grab and bb10.side_keys_fd then
+--- Grab `keys`: a list of side keys ("vup", "vdown", "playpause"), true for all, false for none.
+function bb10.grabSideKeys(keys)
+    if keys == true then
+        keys = SIDE_KEYS
+    end
+    local wanted = keys and table.concat(keys, ",") or ""
+    if wanted == (bb10.side_keys_grabbed or "") then
+        return bb10.side_keys_fd ~= nil
+    end
+    if bb10.side_keys_fd then
         -- Closing the PPS connection drops our registrations.
         bb10.bps.bps_remove_fd(bb10.side_keys_fd)
         C.close(bb10.side_keys_fd)
         bb10.side_keys_fd = nil
     end
-    return bb10.side_keys_fd ~= nil
+    bb10.side_keys_grabbed = nil
+    if wanted == "" then
+        return false
+    end
+    local fd = C.open(MEDIA_KEYS_PPS, C.O_RDWR)
+    if fd < 0 then
+        return false
+    end
+    for _, key in ipairs(keys) do
+        local msg = string.format('msg::button\nid::%s\ndat:json:{"key":"bn_%s_short","action":"forward"}\n', key, key)
+        C.write(fd, msg, #msg)
+    end
+    bb10.bps.bps_add_fd(fd, C.BPS_IO_INPUT, side_keys_handler, nil)
+    bb10.side_keys_fd = fd
+    bb10.side_keys_grabbed = wanted
+    return true
+end
+
+--- Grab the side keys that are ours now: all of them in the foreground, else only the middle
+-- one while it's a media play/pause key.
+function bb10.updateSideKeys()
+    if bb10.inForeground() then
+        return bb10.grabSideKeys(true)
+    end
+    return bb10.grabSideKeys(bb10.media_playpause and { "playpause" } or false)
+end
+
+function bb10.setMediaPlayPause(on)
+    bb10.media_playpause = on and true or false
+    bb10.updateSideKeys()
 end
 
 function bb10.setKeepAwake(keep_awake)
